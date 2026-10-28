@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>scikit-robot Web ri</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='5' y='7' width='14' height='10' rx='3' fill='none' stroke='%232459d6' stroke-width='1.8'/%3E%3Ccircle cx='9.5' cy='12' r='1.5' fill='%232459d6'/%3E%3Ccircle cx='14.5' cy='12' r='1.5' fill='%232459d6'/%3E%3C/svg%3E">
+<meta name="description" content="Program a simulated robot from the browser with scikit-robot's robot interface (ri), MuJoCo and Pyodide.">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="5" y="7" width="14" height="10" rx="3"/>
+      <circle cx="9.5" cy="12" r="1.5"/><circle cx="14.5" cy="12" r="1.5"/>
+      <path d="M12 7V4M8 20h8"/>
+    </svg>
+    <span class="brand-name">scikit-robot</span>
+    <span class="brand-sub">Web ri</span>
+  </div>
+  <div class="status" id="status-box">
+    <span class="dot" id="status-dot"></span>
+    <span id="status">…</span>
+  </div>
+  <nav class="links">
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="en">EN</button>
+      <button type="button" data-lang="ja">日本語</button>
+    </div>
+    <a id="docs-link" href="https://github.com/iory/scikit-robot-web#readme" target="_blank" rel="noopener" data-i18n="docs">Docs</a>
+    <a href="https://github.com/iory/scikit-robot-web" target="_blank" rel="noopener">GitHub</a>
+  </nav>
+</header>
+
+<main class="layout">
+  <section class="pane code-pane">
+    <div class="toolbar">
+      <label class="sample-picker">
+        <span class="visually-hidden" data-i18n="sample">Sample</span>
+        <select id="sample"></select>
+      </label>
+      <div class="actions">
+        <button id="run" class="primary" type="button" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+          <span data-i18n="run">Run</span>
+        </button>
+        <button id="stop" type="button" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+          <span data-i18n="stop">Stop</span>
+        </button>
+        <button id="revert" class="ghost-button" type="button" data-i18n-title="revertTitle">
+          <span data-i18n="revert">Reset code</span>
+        </button>
+      </div>
+    </div>
+    <p class="sample-desc" id="sample-desc"></p>
+    <div class="editor-wrap"><textarea id="editor" spellcheck="false"></textarea></div>
+    <div class="console">
+      <div class="console-head">
+        <span data-i18n="output">Output</span>
+        <span class="hint" data-i18n="shortcut">Ctrl+Enter to run</span>
+        <button id="clear" class="ghost-button small" type="button" data-i18n="clear">Clear</button>
+      </div>
+      <pre id="log" aria-live="polite"></pre>
+    </div>
+  </section>
+
+  <section class="pane view-pane">
+    <div id="view">
+      <div id="preparing" class="overlay">
+        <div class="spinner" aria-hidden="true"></div>
+        <p data-i18n="preparing">Preparing the simulation… converting the robot takes a few seconds.</p>
+      </div>
+      <div class="legend">
+        <span class="swatch ghost"></span><span data-i18n="legendRobot">robot (model)</span>
+        <span class="swatch real"></span><span data-i18n="legendRi">ri (simulated robot)</span>
+      </div>
+      <button id="fit" class="view-button" type="button" data-i18n="fit">Reset view</button>
+      <div id="camera"><span id="camera-name"></span><canvas id="camera-canvas"></canvas></div>
+    </div>
+  </section>
+</main>
+<script type="module" src="./main.js"></script>
+</body>
+</html>

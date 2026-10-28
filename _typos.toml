@@ -1,0 +1,6 @@
+[files]
+extend-exclude = ["dist/"]
+
+[default.extend-words]
+# three.js material property
+metalness = "metalness"
