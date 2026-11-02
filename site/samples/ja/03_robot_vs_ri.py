@@ -63,6 +63,7 @@ ri.wait_interpolation()
 # 4. ri から読み返すと、計画 (robot) と現実 (ri) の差がわかる
 planned = robot.angle_vector().copy()
 actual = ri.angle_vector()
+print('4. ri から読み返す')
 print('   計画した手先の高さ {:.3f} m'.format(hand_z(robot)))
 print('   関節角度の差の最大 {:.3f} rad'.format(np.abs(actual - planned).max()))
 print('   机に触れているもの', ri.contacts('table'))

@@ -65,6 +65,7 @@ ri.wait_interpolation()
 # 4. Read ri back: the plan (robot) and what happened (ri) differ.
 planned = robot.angle_vector().copy()
 actual = ri.angle_vector()
+print('4. read ri back')
 print('   planned hand height {:.3f} m'.format(hand_z(robot)))
 print('   largest joint difference {:.3f} rad'.format(
     np.abs(actual - planned).max()))
