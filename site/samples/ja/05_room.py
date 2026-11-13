@@ -36,13 +36,14 @@ print('   x {:.2f} m, y {:.2f} m にいる'.format(*ri.odom.worldpos()[:2]))
 
 # 2. 机のほうを向いて、机の下に入る。机の脚は高さ 6 cm の棒で、Jedy の
 # 車輪の直径も 6 cm: ri はそこで止まる。
-print('2. 右を向いて 2 m 進み、机の下に入る')
-ri.go_pos(0.0, 0.0, -np.pi / 2)
+print('2. 左を向いて 2 m 進み、机の下に入る')
+ri.go_pos(0.0, 0.0, np.pi / 2)
 goal = ri.odom.copy_worldcoords().translate((2.0, 0.0, 0.0))
 ri.go_pos(2.0, 0.0, 0.0)
 print('   y {:.2f} m まで行かず、y {:.2f} m で止まった'.format(
     goal.worldpos()[1], ri.odom.worldpos()[1]))
-print('   触れているもの:', ri.contacts('base_link'))
+touching = {link.name: ri.contacts(link.name) for link in robot.link_list}
+print('   触れているもの:', {name: other for name, other in touching.items() if other})
 
 # 3. 模型は言われたところへ行く。机のことは知らない。
 robot.newcoords(goal)

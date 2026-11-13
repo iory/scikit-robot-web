@@ -5,7 +5,12 @@
 **Try it:** https://iory.github.io/scikit-robot-web/ (English) or
 [in Japanese](https://iory.github.io/scikit-robot-web/?lang=ja).
 
-[![Web ri: Python on the left, the simulated Jedy on the right](docs/screenshot.png)](https://iory.github.io/scikit-robot-web/)
+[![Sample 5 in the page: Python on the left drives Jedy through room 13BC on the right](docs/room13bc.webp)](https://iory.github.io/scikit-robot-web/)
+
+*Sample 5: `ri.go_pos` drives Jedy down the aisle of room 13BC and under a
+desk. The simulated robot (`ri`) stops on the desk's feet; the model you
+plan with (`robot`, blue) goes on through them. (Recorded in Chrome; the
+drive is shown at 2x speed.)*
 
 Program a robot from a web page, with nothing to install. You write Python
 in the page and it runs there: [scikit-robot](https://github.com/iory/scikit-robot)
@@ -48,6 +53,8 @@ program for the real robot.
 ## Samples
 
 The page opens with five samples, in `site/samples/en` (and `site/samples/ja`):
+
+[![Web ri: Python on the left, the simulated Jedy on the right](docs/screenshot.png)](https://iory.github.io/scikit-robot-web/)
 
 1. **Basics**: send joint angles with `ri.angle_vector`, wait with
    `ri.wait_interpolation`, drive with `ri.go_pos`, read the robot back.

@@ -36,13 +36,14 @@ print('   at x {:.2f} m, y {:.2f} m'.format(*ri.odom.worldpos()[:2]))
 
 # 2. Turn to a desk and drive under it. Its feet are bars 6 cm high, and
 # Jedy's wheels are 6 cm across: ri stops on them.
-print('2. turn right and drive 2 m, under a desk')
-ri.go_pos(0.0, 0.0, -np.pi / 2)
+print('2. turn left and drive 2 m, under a desk')
+ri.go_pos(0.0, 0.0, np.pi / 2)
 goal = ri.odom.copy_worldcoords().translate((2.0, 0.0, 0.0))
 ri.go_pos(2.0, 0.0, 0.0)
 print('   stopped at y {:.2f} m instead of {:.2f} m'.format(
     ri.odom.worldpos()[1], goal.worldpos()[1]))
-print('   touching:', ri.contacts('base_link'))
+touching = {link.name: ri.contacts(link.name) for link in robot.link_list}
+print('   touching:', {name: other for name, other in touching.items() if other})
 
 # 3. The model goes wherever it is told: it does not know about the desk.
 robot.newcoords(goal)

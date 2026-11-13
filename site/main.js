@@ -201,6 +201,14 @@ const VIEW_DIRECTION = new THREE.Vector3(-1.2, -2.2, 1.4).normalize();
 // A scene more than this many times the robot's size (a room) is framed on
 // the robot instead, which would otherwise be a speck in it.
 const ROBOT_FRAMING_RATIO = 5;
+// Camera distance, in sizes of what is framed: close for a robot and its
+// table, further back for a robot in a room, so the room shows around it.
+const VIEW_DISTANCE = 1.3;
+const ROOM_VIEW_DISTANCE = 4;
+// In a room, from behind the robot as it starts (facing +x) and a little to
+// its right, below desk height, so desks do not hide it when it drives
+// under one.
+const ROOM_VIEW_DIRECTION = new THREE.Vector3(-2.2, -0.6, 0.6).normalize();
 let fittedSize = null;
 function boundsOf(objects) {
   const box = new THREE.Box3();
@@ -211,7 +219,8 @@ function boundsOf(objects) {
   }
   return box;
 }
-function fitView(objects, force = false) {
+function fitView(objects, force = false, distance = VIEW_DISTANCE,
+                 direction = VIEW_DIRECTION) {
   const box = boundsOf(objects);
   if (box.isEmpty()) return;
   const size = box.getSize(new THREE.Vector3()).length();
@@ -220,7 +229,7 @@ function fitView(objects, force = false) {
   fittedSize = size;
   const center = box.getCenter(new THREE.Vector3());
   controls.target.copy(center);
-  camera.position.copy(center).addScaledVector(VIEW_DIRECTION, 1.3 * size);
+  camera.position.copy(center).addScaledVector(direction, distance * size);
   camera.near = size / 100;
   camera.far = size * 100;
   camera.updateProjectionMatrix();
@@ -265,8 +274,15 @@ function framedObjects(m) {
   return scene > ROBOT_FRAMING_RATIO * own ? robot : m.objects;
 }
 
+// Frame what framedObjects() picks, from the distance that suits it.
+function fitModel(m) {
+  const framed = framedObjects(m);
+  if (framed === m.objects) fitView(framed, true);
+  else fitView(framed, true, ROOM_VIEW_DISTANCE, ROOM_VIEW_DIRECTION);
+}
+
 $('fit').onclick = () => {
-  if (shown !== null) fitView(framedObjects(models.get(shown)), true);
+  if (shown !== null) fitModel(models.get(shown));
 };
 
 // --- camera image --------------------------------------------------------
@@ -343,7 +359,7 @@ function startWorker() {
           m.robotGeoms = msg.geomIds;
           const framed = framedObjects(m);
           if (framed !== m.objects) {
-            fitView(framed, true);
+            fitModel(m);
             // And followed: in a room it soon drives out of view.
             m.following = true;
           }
