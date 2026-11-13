@@ -4,6 +4,9 @@
   simplified (about 110,000 faces instead of 700,000, which take the
   browser tens of seconds to load). Its data is fetched here once and
   served with the page.
+- **Scene data.** Room 13BC, the Jedy exercise room, as its light bundle
+  (``room13bc_urdfpath(light=True)``: 1.1 MB, textures of at most 1024 px,
+  instead of 54 MB).
 - **Convex decomposition.** CoACD is a native library, so Pyodide has none.
   The decompositions the samples ask for are computed here, and the page
   finds them in skrobot's cache (``convex_decomposition_cached``).
@@ -34,6 +37,12 @@ ROBOTS = {
     }),
 }
 
+# Scene data directory -> the skrobot.data function that downloads it, and
+# its keyword arguments as the samples pass them.
+SCENES = {
+    'room13bc_light_description': ('room13bc_urdfpath', {'light': True}),
+}
+
 
 def main():
     out_dir = os.path.abspath(sys.argv[1])
@@ -45,6 +54,7 @@ def main():
     os.environ['SKROBOT_CACHE_DIR'] = out_dir
 
     import skrobot
+    import skrobot.data
     from skrobot.urdf import urdf_to_mjcf
 
     for robot_name, (data_dir, robot_kwargs, kwargs) in ROBOTS.items():
@@ -57,7 +67,12 @@ def main():
         finally:
             shutil.rmtree(work)
 
-    keep = {'convex_decomposition'} | {d for d, _, _ in ROBOTS.values()}
+    for function, kwargs in SCENES.values():
+        # Downloads the scene data into out_dir.
+        getattr(skrobot.data, function)(**kwargs)
+
+    keep = ({'convex_decomposition'} | {d for d, _, _ in ROBOTS.values()}
+            | set(SCENES))
     for name in os.listdir(out_dir):
         if name not in keep:
             path = os.path.join(out_dir, name)

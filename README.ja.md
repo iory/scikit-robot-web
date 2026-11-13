@@ -4,7 +4,11 @@
 
 **試す:** https://iory.github.io/scikit-robot-web/?lang=ja
 
-[![Web ri の画面: 左に Python、右にシミュレーションの Jedy](docs/screenshot.png)](https://iory.github.io/scikit-robot-web/?lang=ja)
+[![ページでサンプル 5 を実行したところ: 左の Python で、右の演習室 13BC の Jedy を動かす](docs/room13bc_ja.webp)](https://iory.github.io/scikit-robot-web/?lang=ja)
+
+*サンプル 5: `ri.go_pos` で Jedy が演習室 13BC の通路を進み、机の下に入る。
+シミュレーションのロボット (`ri`) は机の脚で止まり、計画に使う模型
+(`robot`、青) はそのまま突き抜ける。(Chrome で録画。走行部分は 2 倍速)*
 
 インストールなしでブラウザからロボットをプログラムできるページです。ページに
 Python を書くとその場で動きます。[scikit-robot](https://github.com/iory/scikit-robot)
@@ -43,7 +47,9 @@ robot.angle_vector(ri.angle_vector())       # 実際の姿勢を読む
 
 ## サンプル
 
-ページには 4 つのサンプルがあります (`site/samples/ja`、英語版は `site/samples/en`)。
+ページには 5 つのサンプルがあります (`site/samples/ja`、英語版は `site/samples/en`)。
+
+[![Web ri の画面: 左に Python、右にシミュレーションの Jedy](docs/screenshot.png)](https://iory.github.io/scikit-robot-web/?lang=ja)
 
 1. **基本**: `ri.angle_vector` で関節角度を送り、`ri.wait_interpolation` で
    待ち、`ri.go_pos` で台車を動かして、状態を読み返す。
@@ -54,6 +60,10 @@ robot.angle_vector(ri.angle_vector())       # 実際の姿勢を読む
 4. **ピックで見る robot と ri の違い**: もう一度ピックしながら、計画、台車の
    移動、グリッパーで箱を挟む所、箱の位置で `robot` と `ri` がずれる様子を
    見る。
+5. **演習室 13BC で**: Jedy の演習室 (東京大学 工学部2号館 1 階の 13BC 室、
+   通称「メカスタ」) と机 48 台を URDF から読み込み、物体として `ri` に
+   渡す。Jedy で通路を進んで机の下に入ると、`ri` は机の脚で止まり、
+   `robot` は突き抜ける。
 
 デスクトップでも動きます (`viewer=True` で MuJoCo のビューアが開きます)。
 

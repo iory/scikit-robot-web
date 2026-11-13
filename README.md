@@ -5,7 +5,12 @@
 **Try it:** https://iory.github.io/scikit-robot-web/ (English) or
 [in Japanese](https://iory.github.io/scikit-robot-web/?lang=ja).
 
-[![Web ri: Python on the left, the simulated Jedy on the right](docs/screenshot.png)](https://iory.github.io/scikit-robot-web/)
+[![Sample 5 in the page: Python on the left drives Jedy through room 13BC on the right](docs/room13bc.webp)](https://iory.github.io/scikit-robot-web/)
+
+*Sample 5: `ri.go_pos` drives Jedy down the aisle of room 13BC and under a
+desk. The simulated robot (`ri`) stops on the desk's feet; the model you
+plan with (`robot`, blue) goes on through them. (Recorded in Chrome; the
+drive is shown at 2x speed.)*
 
 Program a robot from a web page, with nothing to install. You write Python
 in the page and it runs there: [scikit-robot](https://github.com/iory/scikit-robot)
@@ -47,7 +52,9 @@ program for the real robot.
 
 ## Samples
 
-The page opens with four samples, in `site/samples/en` (and `site/samples/ja`):
+The page opens with five samples, in `site/samples/en` (and `site/samples/ja`):
+
+[![Web ri: Python on the left, the simulated Jedy on the right](docs/screenshot.png)](https://iory.github.io/scikit-robot-web/)
 
 1. **Basics**: send joint angles with `ri.angle_vector`, wait with
    `ri.wait_interpolation`, drive with `ri.go_pos`, read the robot back.
@@ -58,6 +65,11 @@ The page opens with four samples, in `site/samples/en` (and `site/samples/ja`):
 4. **robot vs ri in a pick**: the pick again, stopping where `robot` and
    `ri` differ: planning, driving the base, closing the gripper on the
    cube, and the cube's position.
+5. **In room 13BC**: the Jedy exercise room, Room 13BC on the 1st floor
+   of Engineering Building No. 2, the University of Tokyo ("Mechasta",
+   メカスタ), with its 48 desks, loaded from a URDF and passed to `ri` as
+   an object. Jedy drives down the aisle and under a desk, where `ri`
+   stops on the desk's feet and `robot` goes on through them.
 
 They run on a desktop as well (`viewer=True` opens MuJoCo's viewer):
 
@@ -100,6 +112,10 @@ It writes `site/dist/`:
 
 - a wheel of that scikit-robot and the pure-Python wheels it needs, so the
   page does not query PyPI;
+- the room the fifth sample loads, as its light bundle
+  (`skrobot.data.room13bc_urdfpath(light=True)`: 1.1 MB, textures of at
+  most 1024 px, instead of 54 MB). The page draws the textures MuJoCo
+  loads, so the robot's cameras (`ri.get_image`) see them too;
 - the robot data of the light Jedy the samples load (`Jedy(light=True)`:
   about 110,000 faces instead of 700,000, which take the browser tens of
   seconds to convert and compile);
