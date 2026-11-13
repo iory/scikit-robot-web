@@ -69,6 +69,13 @@ const SAMPLES = [
     ja: ['4. ピックで見る robot と ri の違い',
       'もう一度ピックしながら、robot と ri がずれる場面を順に見ます: 計画、台車の移動、把持、箱の位置。'],
   },
+  {
+    file: '05_room.py',
+    en: ['5. In room 13BC',
+      'Load the exercise room and its 48 desks from a URDF, drive Jedy down the aisle and under a desk, where ri stops on its feet.'],
+    ja: ['5. 演習室 13BC で',
+      '演習室と机 48 台を URDF から読み込み、Jedy で通路を進んで机の下に入ります。ri は机の脚で止まります。'],
+  },
 ];
 
 const LANGS = Object.keys(TEXT);
@@ -191,14 +198,21 @@ renderer.setAnimationLoop(() => {
 // Frame everything but the floor when the scene's size changes a lot, and
 // otherwise keep the viewpoint the student chose.
 const VIEW_DIRECTION = new THREE.Vector3(-1.2, -2.2, 1.4).normalize();
+// A scene more than this many times the robot's size (a room) is framed on
+// the robot instead, which would otherwise be a speck in it.
+const ROBOT_FRAMING_RATIO = 5;
 let fittedSize = null;
-function fitView(objects, force = false) {
+function boundsOf(objects) {
   const box = new THREE.Box3();
   for (const o of objects) {
     if (o === null || o.userData.isPlane) continue;
     o.updateMatrixWorld(true);
     box.expandByObject(o);
   }
+  return box;
+}
+function fitView(objects, force = false) {
+  const box = boundsOf(objects);
   if (box.isEmpty()) return;
   const size = box.getSize(new THREE.Vector3()).length();
   if (!force && fittedSize !== null && size < 1.5 * fittedSize
@@ -225,8 +239,34 @@ function showModel(id) {
   shown = id;
 }
 
+// Move the view with the robot, keeping where the student looks from.
+function follow(m, xpos) {
+  const center = new THREE.Vector3();
+  for (const i of m.robotGeoms) {
+    center.x += xpos[3 * i];
+    center.y += xpos[3 * i + 1];
+    center.z += xpos[3 * i + 2];
+  }
+  center.divideScalar(m.robotGeoms.length);
+  if (m.followed !== undefined) {
+    const delta = center.clone().sub(m.followed);
+    camera.position.add(delta);
+    controls.target.add(delta);
+  }
+  m.followed = center;
+}
+
+// What fitView frames for a model: the robot alone when the scene dwarfs it.
+function framedObjects(m) {
+  if (m.robotGeoms === undefined) return m.objects;
+  const robot = m.robotGeoms.map((i) => m.objects[i]);
+  const scene = boundsOf(m.objects).getSize(new THREE.Vector3()).length();
+  const own = boundsOf(robot).getSize(new THREE.Vector3()).length();
+  return scene > ROBOT_FRAMING_RATIO * own ? robot : m.objects;
+}
+
 $('fit').onclick = () => {
-  if (shown !== null) fitView(models.get(shown).objects, true);
+  if (shown !== null) fitView(framedObjects(models.get(shown)), true);
 };
 
 // --- camera image --------------------------------------------------------
@@ -298,6 +338,15 @@ function startWorker() {
         if (m.ghost === null) {
           m.ghost = buildModel(m.desc, { only: msg.geomIds, ghost: true });
           if (shown === msg.id) scene.add(m.ghost.root);
+          // The ghost's geoms are the robot's: now the view can be framed
+          // on the robot, if the scene around it is a room.
+          m.robotGeoms = msg.geomIds;
+          const framed = framedObjects(m);
+          if (framed !== m.objects) {
+            fitView(framed, true);
+            // And followed: in a room it soon drives out of view.
+            m.following = true;
+          }
         }
         setPoses(m.ghost.objects, msg.xpos, msg.xmat);
         break;
@@ -308,6 +357,7 @@ function startWorker() {
           setPreparing(false);
           if (shown !== msg.id) showModel(msg.id);
           setPoses(m.objects, msg.xpos, msg.xmat);
+          if (m.following) follow(m, msg.xpos);
           if (!m.posed) {
             m.posed = true;
             fitView(m.objects);

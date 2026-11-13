@@ -43,7 +43,7 @@ robot.angle_vector(ri.angle_vector())       # 実際の姿勢を読む
 
 ## サンプル
 
-ページには 4 つのサンプルがあります (`site/samples/ja`、英語版は `site/samples/en`)。
+ページには 5 つのサンプルがあります (`site/samples/ja`、英語版は `site/samples/en`)。
 
 1. **基本**: `ri.angle_vector` で関節角度を送り、`ri.wait_interpolation` で
    待ち、`ri.go_pos` で台車を動かして、状態を読み返す。
@@ -54,6 +54,10 @@ robot.angle_vector(ri.angle_vector())       # 実際の姿勢を読む
 4. **ピックで見る robot と ri の違い**: もう一度ピックしながら、計画、台車の
    移動、グリッパーで箱を挟む所、箱の位置で `robot` と `ri` がずれる様子を
    見る。
+5. **演習室 13BC で**: Jedy の演習室 (東京大学 工学部2号館 1 階の 13BC 室、
+   通称「メカスタ」) と机 48 台を URDF から読み込み、物体として `ri` に
+   渡す。Jedy で通路を進んで机の下に入ると、`ri` は机の脚で止まり、
+   `robot` は突き抜ける。
 
 デスクトップでも動きます (`viewer=True` で MuJoCo のビューアが開きます)。
 

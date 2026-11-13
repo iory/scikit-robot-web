@@ -20,6 +20,9 @@ const PLANE_HALF_SIZE = 20.0;  // for an infinite plane (size 0)
 
 const GHOST_COLOR = new THREE.Color(0.2, 0.55, 1.0);
 
+// mjtTextureRole: the column of mat_texid holding a material's colour map.
+const TEXROLE_RGB = 1;
+
 // Copies of the model arrays the drawing needs, safe to postMessage.
 export function describeModel(model) {
   const copy = (name) => model[name].slice();
@@ -38,6 +41,19 @@ export function describeModel(model) {
     mesh_facenum: copy('mesh_facenum'),
     mesh_vert: copy('mesh_vert'),
     mesh_face: copy('mesh_face'),
+    // Textures: a room's photographs. Texture coordinates are per mesh,
+    // indexed per face corner like mesh_face.
+    nmat: model.nmat,
+    mat_texid: copy('mat_texid'),
+    mat_texrepeat: copy('mat_texrepeat'),
+    mesh_texcoordadr: copy('mesh_texcoordadr'),
+    mesh_texcoord: copy('mesh_texcoord'),
+    mesh_facetexcoord: copy('mesh_facetexcoord'),
+    tex_width: copy('tex_width'),
+    tex_height: copy('tex_height'),
+    tex_nchannel: copy('tex_nchannel'),
+    tex_adr: copy('tex_adr'),
+    tex_data: copy('tex_data'),
     extent: model.stat.extent,
     zfar: model.vis.map.zfar,
     znear: model.vis.map.znear,
@@ -55,6 +71,54 @@ function meshGeometry(desc, meshId) {
     Uint32Array.from(desc.mesh_face.subarray(3 * f0, 3 * (f0 + nf))), 1));
   geometry.computeVertexNormals();
   return geometry;
+}
+
+// A mesh drawn with its texture: one vertex per face corner, since MuJoCo
+// numbers texture coordinates apart from positions. MuJoCo stores them with
+// v = 0 at the image's top row, which is how texture() lays out the data.
+function texturedMeshGeometry(desc, meshId) {
+  const v0 = desc.mesh_vertadr[meshId];
+  const f0 = desc.mesh_faceadr[meshId], nf = desc.mesh_facenum[meshId];
+  const t0 = desc.mesh_texcoordadr[meshId];
+  const position = new Float32Array(9 * nf), uv = new Float32Array(6 * nf);
+  for (let k = 0; k < 3 * nf; k++) {
+    const v = v0 + desc.mesh_face[3 * f0 + k];
+    const t = t0 + desc.mesh_facetexcoord[3 * f0 + k];
+    position.set(desc.mesh_vert.subarray(3 * v, 3 * v + 3), 3 * k);
+    uv.set(desc.mesh_texcoord.subarray(2 * t, 2 * t + 2), 2 * k);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(position, 3));
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+// The colour map of material `mat`, or -1.
+function materialTexture(desc, mat) {
+  if (mat < 0) return -1;
+  const roles = desc.mat_texid.length / desc.nmat;
+  return desc.mat_texid[roles * mat + TEXROLE_RGB];
+}
+
+function texture(desc, texId, repeat) {
+  const w = desc.tex_width[texId], h = desc.tex_height[texId];
+  const n = desc.tex_nchannel[texId], adr = desc.tex_adr[texId];
+  const rgba = new Uint8Array(4 * w * h);
+  for (let p = 0; p < w * h; p++) {
+    for (let c = 0; c < 4; c++) {
+      rgba[4 * p + c] = c < n ? desc.tex_data[adr + n * p + c] : 255;
+    }
+  }
+  const tex = new THREE.DataTexture(rgba, w, h, THREE.RGBAFormat);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(repeat[0], repeat[1]);
+  tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.generateMipmaps = true;
+  tex.needsUpdate = true;
+  return tex;
 }
 
 function geomGeometry(desc, i) {
@@ -105,13 +169,38 @@ export function buildModel(desc, { only = null, ghost = false } = {}) {
   const root = new THREE.Group();
   const objects = new Array(desc.ngeom).fill(null);
   const wanted = only === null ? null : new Set(only);
+  // Shared between geoms: a room's 48 desks are one mesh and one texture.
+  const texturedGeometries = new Map(), textures = new Map();
   for (let i = 0; i < desc.ngeom; i++) {
     if (!VISIBLE_GROUPS.has(desc.geom_group[i])) continue;
     if (wanted !== null && !wanted.has(i)) continue;
-    const geometry = geomGeometry(desc, i);
-    if (geometry === null) continue;
     const rgba = geomColor(desc, i);
     if (rgba[3] === 0) continue;
+    const mat = desc.geom_matid[i], meshId = desc.geom_dataid[i];
+    const texId = ghost ? -1 : materialTexture(desc, mat);
+    const textured = texId >= 0 && desc.geom_type[i] === MESH
+      && desc.mesh_texcoordadr[meshId] >= 0;
+    let geometry;
+    if (textured) {
+      geometry = texturedGeometries.get(meshId);
+      if (geometry === undefined) {
+        geometry = texturedMeshGeometry(desc, meshId);
+        texturedGeometries.set(meshId, geometry);
+      }
+    } else {
+      geometry = geomGeometry(desc, i);
+    }
+    if (geometry === null) continue;
+    let map = null;
+    if (textured) {
+      const repeat = desc.mat_texrepeat.subarray(2 * mat, 2 * mat + 2);
+      const key = `${texId} ${repeat[0]} ${repeat[1]}`;
+      map = textures.get(key);
+      if (map === undefined) {
+        map = texture(desc, texId, repeat);
+        textures.set(key, map);
+      }
+    }
     const material = ghost
       ? new THREE.MeshStandardMaterial({
         color: GHOST_COLOR, transparent: true, opacity: 0.35,
@@ -119,6 +208,7 @@ export function buildModel(desc, { only = null, ghost = false } = {}) {
       })
       : new THREE.MeshStandardMaterial({
         color: new THREE.Color(rgba[0], rgba[1], rgba[2]),
+        map,
         // A see-through geom must not hide what is inside it (the ghost).
         transparent: rgba[3] < 1, opacity: rgba[3], depthWrite: rgba[3] >= 1,
         roughness: 0.7, metalness: 0.1,
